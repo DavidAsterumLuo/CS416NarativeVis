@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src='https://d3js.org/d3.v5.min.js' charset="utf-8"></script>
+<style> .chart rect {fill:orange}</style>
+<head>
+    <meta charset="UTF-8">
+    <title>Splatoon 3 Weapon Usage</title>
+    <style>
+  /* Style for the tooltip */
+  #tooltip {
+    opacity: 0;
+    position: absolute;
+      text-align: center;
+      width: 250px; height: 40px;
+      background: white;
+      border: 0px;
+  }
+</style>
+</head>
+<title>Splatoon 3 Weapon Statistics</title>
+<body>
+    <h1>Splatoon 3 Weapon Usage By Season and Version</h1>
+    <button id=prevV onclick="update(versionNumbers[curentVersion - 1], 0)" style="display: none">Previous Version</button>
+    <button id=nextV onclick="update(versionNumbers[curentVersion + 1], 1)">Next Version</button>
+</select>
+    <h2 id="Version"> Version 1.1.1 (Released September 15, 2022)</h2>
+
+    <svg id="chart"></svg>
+    <div id="tooltip"></div>
+    <script type="text/javascript">
+        curentVersion = 0
+        versionNumbers = [
+            "1.1.1",
+            "1.1.2",
+            "1.2.0",
+            "1.2.1",
+            "2.0.0",
+            "2.0.1",
+            "2.1.1",
+            "3.0.0",
+            "3.0.1",
+            "3.1.0",
+            "3.1.1",
+            "4.0.0",
+            "4.0.1",
+            "4.0.2",
+            "4.1.0"
+        ]
+        versionRelease ={
+            "2.0.1" :"(Released December 8, 2022)",
+            '2.0.0' :"(Released November 29, 2022)",
+            '1.2.1' :"(Released October 27, 2022)",
+            '1.2.0' :"(Released October 25, 2022)",
+            "1.1.2" :"(Released September 29, 2022)",
+            "1.1.1" :"(Released September 15, 2022)",
+            "1.1.0" :"(Released September 7, 2022)",
+            "2.1.1": "(Released February 8, 2023)",
+            "2.1.0": "(Released January 17, 2023)",
+            "4.1.0" : "(Released July 26, 2023)",
+            "4.0.2" : "(Released June 13, 2023)",
+            "4.0.1" : "(Released June 1, 2023)",
+            "4.0.0" : "(Released May 30, 2023)",
+            "3.1.1" : "(Released May 1, 2023)",
+            "3.1.0" : "(Released March 30, 2023)",
+            "3.0.1" : "(Released March 8, 2023)",
+            "3.0.0" : "(Released February 27, 2023)"
+        }
+        Vselection = function (version) {
+            switch (version) {
+                case "1.1.1":
+                    return d3.csv("/Data/Version1.1.1.csv");
+                case "1.1.2":
+                    return d3.csv("/Data/Version1.1.2.csv");
+                case "1.2.0":
+                    return d3.csv("/Data/Version1.2.0.csv");
+                case "1.2.1":
+                    return d3.csv("/Data/Version1.2.1.csv");
+                case "2.0.0":
+                    return d3.csv("/Data/Version2.0.0.csv");
+                case "2.0.1":
+                    return d3.csv("/Data/Version2.0.1.csv");
+                case "2.1.0":
+                    return d3.csv("/Data/Version2.1.0.csv");
+                case "2.1.1":
+                    return d3.csv("/Data/Version2.1.1.csv");
+                case "3.0.0":
+                    return d3.csv("/Data/Version3.0.0.csv");
+                case "3.0.1":
+                    return d3.csv("/Data/Version3.0.1.csv");
+                case "3.1.0":
+                    return d3.csv("/Data/Version3.1.0.csv");
+                case "3.1.1":
+                    return d3.csv("/Data/Version3.1.1.csv");
+                case "4.0.0":
+                    return d3.csv("/Data/Version4.0.0.csv");
+                case "4.0.1":
+                    return d3.csv("/Data/Version4.0.1.csv");
+                case "4.0.2":
+                    return d3.csv("/Data/Version4.0.2.csv");
+                case "4.1.0":
+                    return d3.csv("/Data/Version4.1.0.csv");
+            }
+        }
+        CreateChart = async function (ver){
+            data = await Vselection(ver)
+            const barHeight = 25;
+            const marginTop = 30;
+            const marginRight = 0;
+            const marginBottom = 10;
+            const marginLeft = 150;
+            const width = 928;
+            const height = Math.ceil((data.length + 0.1) * barHeight) + marginTop + marginBottom;
+            console.log(height)
+            // Create scales
+            var x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.count)])
+                .range([marginLeft, width - marginRight]);
+
+            var y = d3.scaleBand()
+                .domain(data.map(d => d.Weapon))
+                .rangeRound([marginTop, height - marginBottom])
+                .padding(0.1);
+
+            // Select SVG container
+            svg = d3.select("#chart")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("viewBox", [0, 0, width, height])
+                .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+
+            // Append rects
+            svg.append("g")
+                .attr("fill", "steelblue")
+                .selectAll()
+                .data(data)
+                .join("rect")
+                .attr("x", x(0))
+                .attr("y", (d) => y(d.Weapon))
+                .attr("width", (d) => x(d.count) - x(0))
+                .attr("height", y.bandwidth());
+
+            // Create axes
+            svg.append("g")
+                .attr("class", "x")
+                .attr("transform", `translate(0,${marginTop})`)
+                .call(d3.axisTop(x).ticks(width / 80, "%"))
+                .call(g => g.select(".domain").remove());
+
+            svg.append("g")
+                .attr("class", "y")
+                .attr("transform", `translate(${marginLeft},0)`)
+                .call(d3.axisLeft(y).tickSizeOuter(0));
+
+          // Define tooltip
+            var tooltip = d3.select("#tooltip");
+            d3.selectAll("rect")
+                .on("mouseover",function (d,i){
+                    tooltip.style("opacity", 1)
+                        .style("left",(d3.event.pageX) + "px")
+                        .style("top",(d3.event.pageY) + "px")
+                        .html(d.Weapon +" was played \n" + d3.format(".2f")(d.count * 100) +" percent of the time")
+                })
+                .on("mouseout",function (){tooltip.style("opacity",0)});
+        }
+        chart = CreateChart("1.1.1")
+
+</script>
+<script>
+        async function update(ver, Next){
+            data = await Vselection(ver);
+            const barHeight = 25;
+            const marginTop = 30;
+            const marginRight = 0;
+            const marginBottom = 10;
+            const marginLeft = 150;
+            const width = 928;
+            const height = Math.ceil((data.length + 0.1) * barHeight) + marginTop + marginBottom;
+            var x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.count)])
+                .range([marginLeft, width - marginRight]);
+            var y = d3.scaleBand()
+                .domain(data.map(d => d.Weapon))
+                .rangeRound([marginTop, height - marginBottom])
+                .padding(0.1);
+            svg = d3.select("#chart")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("viewBox", [0, 0, width, height])
+                .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+
+            svg.selectAll("rect")
+                .data(data)
+                .attr("fill","steelblue")
+                .join(
+                    function(enter){
+                        return enter.append("rect").style('opacity', 1).attr("fill","steelblue")
+                    },
+                    function(update){
+                        return update.style('opacity', 1)
+                    },
+                    function(exit){
+                        return exit.remove()
+                    }
+                )
+                .transition()
+                .duration(2000)
+                .attr("x", x(0))
+                .attr("y", (d) => y(d.Weapon))
+                .attr("width", (d) => x(d.count) - x(0))
+                .attr("height", y.bandwidth());
+
+
+            svg.selectAll("g.x")
+                .attr("transform", `translate(0,${marginTop})`)
+                .call(d3.axisTop(x).ticks(width / 80, "%"))
+                .call(g => g.select(".domain").remove());
+
+            svg.selectAll("g.y")
+                .transition()
+                .duration(2000)
+                .attr("transform", `translate(${marginLeft},0)`)
+                .call(d3.axisLeft(y).tickSizeOuter(0));
+
+            console.log(svg.selectAll("y.y"))
+          // Define tooltip
+            var tooltip = d3.select("#tooltip");
+            d3.selectAll("rect")
+                .on("mouseover",function (d,i){
+                    tooltip.style("opacity", 1)
+                        .style("left",(d3.event.pageX) + "px")
+                        .style("top",(d3.event.pageY) + "px")
+                        .html(d.Weapon +" was played \n" + d3.format(".2f")(d.count * 100) +" percent of the time")
+                })
+                .on("mouseout",function (){tooltip.style("opacity",0)});
+            console.log(svg)
+            if(Next){
+                curentVersion++;
+                if (curentVersion == versionNumbers.length - 1){
+                    document.getElementById("nextV").style.display="none";
+                }
+                if (curentVersion == 1){
+                    document.getElementById("prevV").style.display="block";
+                }
+            }
+            else{
+                curentVersion--;
+                if (curentVersion == 0){
+                    document.getElementById("prevV").style.display="none";
+                }
+                if (curentVersion == versionNumbers.length-2){
+                    document.getElementById("nextV").style.display="block";
+                }
+            }
+            document.getElementById("Version").innerHTML = "Version " + versionNumbers[curentVersion] +" " + versionRelease[versionNumbers[curentVersion]]
+            switch (curentVersion){
+                case 0:
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 6:
+                    break;
+                case 7:
+                    break;
+                case 8:
+                    break;
+                case 9:
+                    break;
+                case 10:
+                    break;
+                case 11:
+                    break;
+                case 12:
+                    break;
+                case 13:
+                    break;
+                case 14:
+                    break;
+            }
+            }
+</script>
+    <p>data from <a href="https://stat.ink/">stat.ink</a></p>
+</body>
+</html>
