@@ -1,291 +1,1905 @@
 <!DOCTYPE html>
 <html lang="en">
 <script src='https://d3js.org/d3.v5.min.js' charset="utf-8"></script>
-<style> .chart rect {fill:orange}</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js" charset="utf-8"></script>
+<style> .chart rect {
+    fill: orange
+}</style>
 <head>
     <meta charset="UTF-8">
     <title>Splatoon 3 Weapon Usage</title>
     <style>
-  /* Style for the tooltip */
-  #tooltip {
-    opacity: 0;
-    position: absolute;
-      text-align: center;
-      width: 250px; height: 40px;
-      background: white;
-      border: 0px;
-  }
-</style>
+        /* Style for the tooltip */
+        #tooltip {
+            opacity: 0;
+            position: absolute;
+            text-align: center;
+            width: 250px;
+            height: 60px;
+            background: white;
+            border: 0px;
+        }
+    </style>
 </head>
 <title>Splatoon 3 Weapon Statistics</title>
 <body>
-    <h1>Splatoon 3 Weapon Usage By Season and Version</h1>
-    <button id=prevV onclick="update(versionNumbers[curentVersion - 1], 0)" style="display: none">Previous Version</button>
-    <button id=nextV onclick="update(versionNumbers[curentVersion + 1], 1)">Next Version</button>
+<h1>Splatoon 3 Weapon Usage By Season and Version</h1>
+<button id=prevV onclick="update(versionNumbers[curentVersion - 1], 0)" style="display: none">Previous Version</button>
+<button id=nextV onclick="update(versionNumbers[curentVersion + 1], 1)">Next Version</button>
+<p id="intro">By viewing what weapons are most popular in each patch, we can observe how each patch affects what weapons
+    get played.</p>
+<p id="description">Noteable Patch and meta changes will be displayed here and in annotations. You can hover over each
+    bar for exact percentage and playcount</p>
+<p id="patch">For details about each patch click <a
+        href="https://en-americas-support.nintendo.com/app/answers/detail/a_id/59461/~/how-to-update-splatoon-3">here</a>
+</p>
 </select>
-    <h2 id="Version"> Version 1.1.1 (Released September 15, 2022)</h2>
+<h2 id="Version"> Version 1.1.1 (Released September 15, 2022)</h2>
 
-    <svg id="chart"></svg>
-    <div id="tooltip"></div>
-    <script type="text/javascript">
-        curentVersion = 0
-        versionNumbers = [
-            "1.1.1",
-            "1.1.2",
-            "1.2.0",
-            "1.2.1",
-            "2.0.0",
-            "2.0.1",
-            "2.1.1",
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.1.1",
-            "4.0.0",
-            "4.0.1",
-            "4.0.2",
-            "4.1.0"
-        ]
-        versionRelease ={
-            "2.0.1" :"(Released December 8, 2022)",
-            '2.0.0' :"(Released November 29, 2022)",
-            '1.2.1' :"(Released October 27, 2022)",
-            '1.2.0' :"(Released October 25, 2022)",
-            "1.1.2" :"(Released September 29, 2022)",
-            "1.1.1" :"(Released September 15, 2022)",
-            "1.1.0" :"(Released September 7, 2022)",
-            "2.1.1": "(Released February 8, 2023)",
-            "2.1.0": "(Released January 17, 2023)",
-            "4.1.0" : "(Released July 26, 2023)",
-            "4.0.2" : "(Released June 13, 2023)",
-            "4.0.1" : "(Released June 1, 2023)",
-            "4.0.0" : "(Released May 30, 2023)",
-            "3.1.1" : "(Released May 1, 2023)",
-            "3.1.0" : "(Released March 30, 2023)",
-            "3.0.1" : "(Released March 8, 2023)",
-            "3.0.0" : "(Released February 27, 2023)"
+<svg id="chart"></svg>
+<div id="tooltip"></div>
+<script type="text/javascript">
+    curentVersion = 0
+    versionNumbers = [
+        "1.1.1",
+        "1.1.2",
+        "1.2.0",
+        "1.2.1",
+        "2.0.0",
+        "2.0.1",
+        "2.1.1",
+        "3.0.0",
+        "3.0.1",
+        "3.1.0",
+        "3.1.1",
+        "4.0.0",
+        "4.0.1",
+        "4.0.2",
+        "4.1.0"
+    ]
+    versionRelease = {
+        "2.0.1": "(Released December 8, 2022)",
+        '2.0.0': "(Released November 29, 2022)",
+        '1.2.1': "(Released October 27, 2022)",
+        '1.2.0': "(Released October 25, 2022)",
+        "1.1.2": "(Released September 29, 2022)",
+        "1.1.1": "(Released September 15, 2022)",
+        "1.1.0": "(Released September 7, 2022)",
+        "2.1.1": "(Released February 8, 2023)",
+        "2.1.0": "(Released January 17, 2023)",
+        "4.1.0": "(Released July 26, 2023)",
+        "4.0.2": "(Released June 13, 2023)",
+        "4.0.1": "(Released June 1, 2023)",
+        "4.0.0": "(Released May 30, 2023)",
+        "3.1.1": "(Released May 1, 2023)",
+        "3.1.0": "(Released March 30, 2023)",
+        "3.0.1": "(Released March 8, 2023)",
+        "3.0.0": "(Released February 27, 2023)"
+    }
+    Vselection = function (version) {
+        switch (version) {
+            case "1.1.1":
+                return d3.csv("/Data/Version1.1.1.csv");
+            case "1.1.2":
+                return d3.csv("/Data/Version1.1.2.csv");
+            case "1.2.0":
+                return d3.csv("/Data/Version1.2.0.csv");
+            case "1.2.1":
+                return d3.csv("/Data/Version1.2.1.csv");
+            case "2.0.0":
+                return d3.csv("/Data/Version2.0.0.csv");
+            case "2.0.1":
+                return d3.csv("/Data/Version2.0.1.csv");
+            case "2.1.0":
+                return d3.csv("/Data/Version2.1.0.csv");
+            case "2.1.1":
+                return d3.csv("/Data/Version2.1.1.csv");
+            case "3.0.0":
+                return d3.csv("/Data/Version3.0.0.csv");
+            case "3.0.1":
+                return d3.csv("/Data/Version3.0.1.csv");
+            case "3.1.0":
+                return d3.csv("/Data/Version3.1.0.csv");
+            case "3.1.1":
+                return d3.csv("/Data/Version3.1.1.csv");
+            case "4.0.0":
+                return d3.csv("/Data/Version4.0.0.csv");
+            case "4.0.1":
+                return d3.csv("/Data/Version4.0.1.csv");
+            case "4.0.2":
+                return d3.csv("/Data/Version4.0.2.csv");
+            case "4.1.0":
+                return d3.csv("/Data/Version4.1.0.csv");
         }
-        Vselection = function (version) {
-            switch (version) {
-                case "1.1.1":
-                    return d3.csv("/Data/Version1.1.1.csv");
-                case "1.1.2":
-                    return d3.csv("/Data/Version1.1.2.csv");
-                case "1.2.0":
-                    return d3.csv("/Data/Version1.2.0.csv");
-                case "1.2.1":
-                    return d3.csv("/Data/Version1.2.1.csv");
-                case "2.0.0":
-                    return d3.csv("/Data/Version2.0.0.csv");
-                case "2.0.1":
-                    return d3.csv("/Data/Version2.0.1.csv");
-                case "2.1.0":
-                    return d3.csv("/Data/Version2.1.0.csv");
-                case "2.1.1":
-                    return d3.csv("/Data/Version2.1.1.csv");
-                case "3.0.0":
-                    return d3.csv("/Data/Version3.0.0.csv");
-                case "3.0.1":
-                    return d3.csv("/Data/Version3.0.1.csv");
-                case "3.1.0":
-                    return d3.csv("/Data/Version3.1.0.csv");
-                case "3.1.1":
-                    return d3.csv("/Data/Version3.1.1.csv");
-                case "4.0.0":
-                    return d3.csv("/Data/Version4.0.0.csv");
-                case "4.0.1":
-                    return d3.csv("/Data/Version4.0.1.csv");
-                case "4.0.2":
-                    return d3.csv("/Data/Version4.0.2.csv");
-                case "4.1.0":
-                    return d3.csv("/Data/Version4.1.0.csv");
-            }
-        }
-        CreateChart = async function (ver){
-            data = await Vselection(ver)
-            const barHeight = 25;
-            const marginTop = 30;
-            const marginRight = 0;
-            const marginBottom = 10;
-            const marginLeft = 150;
-            const width = 928;
-            const height = Math.ceil((data.length + 0.1) * barHeight) + marginTop + marginBottom;
-            console.log(height)
-            // Create scales
-            var x = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.count)])
-                .range([marginLeft, width - marginRight]);
+    }
+    CreateChart = async function (ver) {
+        data = await Vselection(ver)
+        const barHeight = 25;
+        const marginTop = 30;
+        const marginRight = 0;
+        const marginBottom = 10;
+        const marginLeft = 150;
+        const width = 928;
+        const height = Math.ceil((data.length + 0.1) * barHeight) + marginTop + marginBottom;
+        console.log(height)
+        // Create scales
+        var x = d3.scaleLinear()
+            .domain([0, 0.09])
+            .range([marginLeft, width - marginRight]);
 
-            var y = d3.scaleBand()
-                .domain(data.map(d => d.Weapon))
-                .rangeRound([marginTop, height - marginBottom])
-                .padding(0.1);
+        var y = d3.scaleBand()
+            .domain(data.map(d => d.Weapon))
+            .rangeRound([marginTop, height - marginBottom])
+            .padding(0.1);
 
-            // Select SVG container
-            svg = d3.select("#chart")
-                .attr("width", width)
-                .attr("height", height)
-                .attr("viewBox", [0, 0, width, height])
-                .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+        // Select SVG container
+        svg = d3.select("#chart")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height])
+            .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
 
-            // Append rects
-            svg.append("g")
-                .attr("fill", "steelblue")
-                .selectAll()
-                .data(data)
-                .join("rect")
-                .attr("x", x(0))
-                .attr("y", (d) => y(d.Weapon))
-                .attr("width", (d) => x(d.count) - x(0))
-                .attr("height", y.bandwidth());
+        // Append rects
+        svg.append("g")
+            .attr("fill", "steelblue")
+            .selectAll()
+            .data(data, d => d.Weapon)
+            .join("rect")
+            .attr("x", x(0))
+            .attr("y", (d) => y(d.Weapon))
+            .attr("width", (d) => x(d.countp) - x(0))
+            .attr("height", y.bandwidth());
 
-            // Create axes
-            svg.append("g")
-                .attr("class", "x")
-                .attr("transform", `translate(0,${marginTop})`)
-                .call(d3.axisTop(x).ticks(width / 80, "%"))
-                .call(g => g.select(".domain").remove());
+        // Create axes
+        svg.append("g")
+            .attr("class", "x")
+            .attr("transform", `translate(0,${marginTop})`)
+            .call(d3.axisTop(x).ticks(width / 80, "%"))
+            .call(g => g.select(".domain").remove());
 
-            svg.append("g")
-                .attr("class", "y")
-                .attr("transform", `translate(${marginLeft},0)`)
-                .call(d3.axisLeft(y).tickSizeOuter(0));
+        svg.append("g")
+            .attr("class", "y")
+            .attr("transform", `translate(${marginLeft},0)`)
+            .call(d3.axisLeft(y).tickSizeOuter(0));
 
-          // Define tooltip
-            var tooltip = d3.select("#tooltip");
-            d3.selectAll("rect")
-                .on("mouseover",function (d,i){
-                    tooltip.style("opacity", 1)
-                        .style("left",(d3.event.pageX) + "px")
-                        .style("top",(d3.event.pageY) + "px")
-                        .html(d.Weapon +" was played \n" + d3.format(".2f")(d.count * 100) +" percent of the time")
-                })
-                .on("mouseout",function (){tooltip.style("opacity",0)});
-        }
-        chart = CreateChart("1.1.1")
+        // Define tooltip
+        var tooltip = d3.select("#tooltip");
+        d3.selectAll("rect")
+            .on("mouseover", function (d, i) {
+                tooltip.style("opacity", 1)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY) + "px")
+                    .html(d.Weapon + " was played \n" + (d.count) + " times which was \n" + d3.format(".2f")(d.countp * 100) + "% of plays this patch")
+            })
+            .on("mouseout", function () {
+                tooltip.style("opacity", 0)
+            });
+    }
+    chart = CreateChart("1.1.1")
 
 </script>
 <script>
-        async function update(ver, Next){
-            data = await Vselection(ver);
-            const barHeight = 25;
-            const marginTop = 30;
-            const marginRight = 0;
-            const marginBottom = 10;
-            const marginLeft = 150;
-            const width = 928;
-            const height = Math.ceil((data.length + 0.1) * barHeight) + marginTop + marginBottom;
-            var x = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.count)])
-                .range([marginLeft, width - marginRight]);
-            var y = d3.scaleBand()
-                .domain(data.map(d => d.Weapon))
-                .rangeRound([marginTop, height - marginBottom])
-                .padding(0.1);
-            svg = d3.select("#chart")
-                .attr("width", width)
-                .attr("height", height)
-                .attr("viewBox", [0, 0, width, height])
-                .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+    async function update(ver, Next) {
+        data = await Vselection(ver);
+        const barHeight = 25;
+        const marginTop = 30;
+        const marginRight = 0;
+        const marginBottom = 10;
+        const marginLeft = 150;
+        const width = 928;
+        const height = Math.ceil((data.length + 0.1) * barHeight) + marginTop + marginBottom;
+        var x = d3.scaleLinear()
+            .domain([0, 0.09])
+            .range([marginLeft, width - marginRight]);
+        var y = d3.scaleBand()
+            .domain(data.map(d => d.Weapon))
+            .rangeRound([marginTop, height - marginBottom])
+            .padding(0.1);
+        svg = d3.select("#chart")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height])
+            .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+        svg.select("g")
+            .attr("fill", "steelblue")
+            .selectAll("rect")
+            .data(data, d => d.Weapon)
+            .join("rect")
+            .transition()
+            .duration(2000)
+            .attr("x", x(0))
+            .attr("y", (d) => y(d.Weapon))
+            .attr("width", (d) => x(d.countp) - x(0))
+            .attr("height", y.bandwidth());
 
-            svg.selectAll("rect")
-                .data(data)
-                .attr("fill","steelblue")
-                .join(
-                    function(enter){
-                        return enter.append("rect").style('opacity', 1).attr("fill","steelblue")
+
+        svg.selectAll("g.x")
+            .attr("transform", `translate(0,${marginTop})`)
+            .call(d3.axisTop(x).ticks(width / 80, "%"))
+            .call(g => g.select(".domain").remove());
+
+        svg.selectAll("g.y")
+            .transition()
+            .duration(2000)
+            .attr("transform", `translate(${marginLeft},0)`)
+            .call(d3.axisLeft(y).tickSizeOuter(0));
+
+        console.log(svg.selectAll("y.y"))
+        // Define tooltip
+        var tooltip = d3.select("#tooltip");
+        d3.selectAll("rect")
+            .on("mouseover", function (d, i) {
+                tooltip.style("opacity", 1)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY) + "px")
+                    .html(d.Weapon + " was played \n" + (d.count) + " times which was \n" + d3.format(".2f")(d.countp * 100) + "% of plays this patch")
+            })
+            .on("mouseout", function () {
+                tooltip.style("opacity", 0)
+            });
+        console.log(svg)
+        if (Next) {
+            curentVersion++;
+            if (curentVersion == versionNumbers.length - 1) {
+                document.getElementById("nextV").style.display = "none";
+            }
+            if (curentVersion == 1) {
+                document.getElementById("prevV").style.display = "block";
+            }
+        } else {
+            curentVersion--;
+            if (curentVersion == 0) {
+                document.getElementById("prevV").style.display = "none";
+            }
+            if (curentVersion == versionNumbers.length - 2) {
+                document.getElementById("nextV").style.display = "block";
+            }
+        }
+        document.getElementById("Version").innerHTML = "Version " + versionNumbers[curentVersion] + " " + versionRelease[versionNumbers[curentVersion]]
+        const type = d3.annotationLabel
+        let annotationGroup;
+
+        function clearAnnotations() {
+            gnode = svg.select("g.annotation-group")
+            if (!gnode.empty()) {
+                gnode.remove()
+            }
+        }
+
+        switch (curentVersion) {
+            case 0:
+                clearAnnotations()
+                document.getElementById("intro").style.display = "block";
+                document.getElementById("description").innerHTML = "Noteable Patch and meta changes will be displayed here for later patches You can hover over each bar for exact percentage and playcount"
+                break;
+            case 1:
+                clearAnnotations()
+                document.getElementById("intro").style.display = "none";
+                document.getElementById("description").innerHTML = "Being only a few weeks after 1.1.1 This patch had no balance changes. Interestingly, despite no balance changes, the top 5 weapons do shift a little"
+                break;
+            case 2:
+                clearAnnotations()
+                document.getElementById("description").innerHTML = "1.2.0 saw Fizzy Bomb nerfed which explains part of why we see Sloshing Machine, which has Fizzy Bomb, drop in popularity."
+                annotations = [{
+                    note: {
+                        label: "Has Fizzy Bomb and Special Point Increase",
+                        bgPadding: 10,
+                        title: "Nerfed"
                     },
-                    function(update){
-                        return update.style('opacity', 1)
+                    data: {Weapon: "Sloshing Machine", countp: 0.0395},
+                    dx: 175,
+                    connector: {end: "dot"},
+                    color: "red"
+                },
+                    {
+                        note: {
+                            label: "Has Fizzy Bomb",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Aerospray MG", countp: 0.0136},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    }, {
+                        note: {
+                            label: "Has Fizzy Bomb",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Ballpoint Splatling", countp: 0.0077},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
                     },
-                    function(exit){
-                        return exit.remove()
-                    }
-                )
-                .transition()
-                .duration(2000)
-                .attr("x", x(0))
-                .attr("y", (d) => y(d.Weapon))
-                .attr("width", (d) => x(d.count) - x(0))
-                .attr("height", y.bandwidth());
+                    {
+                        note: {
+                            label: "Special Point Cost Increased",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Flingza Roller", countp: 0.0310},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Special Point Cost Increased",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "REEF-LUX 450", countp: 0.0185},
+                        dx: 175,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                break;
+            case 3:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "Has Fizzy Bomb and Special Point Increase",
+                        bgPadding: 10,
+                        title: "Nerfed in 1.2.0"
+                    },
+                    data: {Weapon: "Sloshing Machine", countp: 0.0361},
+                    dx: 190,
+                    connector: {end: "dot"},
+                    color: "red"
+                },
+                    {
+                        note: {
+                            label: "Has Fizzy Bomb",
+                            bgPadding: 10,
+                            title: "Nerfed in 1.2.0"
+                        },
+                        data: {Weapon: "Aerospray MG", countp: 0.0183},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    }, {
+                        note: {
+                            label: "Has Fizzy Bomb",
+                            bgPadding: 10,
+                            title: "Nerfed in 1.2.0"
+                        },
+                        data: {Weapon: "Ballpoint Splatling", countp: 0.0064},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Special Point Cost Increased",
+                            bgPadding: 10,
+                            title: "Nerfed in 1.2.0"
+                        },
+                        data: {Weapon: "Flingza Roller", countp: 0.0332},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Special Point Cost Increased",
+                            bgPadding: 10,
+                            title: "Nerfed in 1.2.0"
+                        },
+                        data: {Weapon: "REEF-LUX 450", countp: 0.0251},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "1.2.1 had bug fixes only 2 days after 1.2.0 We see Sloshing Machine drop even more as players begin to feel its nerfs.\n Players also begin to realize that the Splash-o-Matic is just as good as the Splattershot"
+                break;
+            case 4:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "New Weapon"
+                    },
+                    data: {Weapon: "Aerospray RG", countp: 0.0331},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Big Swig Roller", countp: 0.0124},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Custom Splattershot Jr.", countp: 0.0650},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Dapple Dualies Nouveau", countp: 0.0218},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Forge Splattershot Pro", countp: 0.0468},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Inkbrush Nouveau", countp: 0.0068},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Luna Blaster Neo", countp: 0.0092},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Slosher Deco", countp: 0.0047},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Snipewriter 5H", countp: 0.0158},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Splattershot Nova", countp: 0.0205},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Tentatek Splattershot", countp: 0.0595},
+                        dx: 140,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "2.0.0 adds many new weapons and adds a few balance changes. We see the new weapons such as the Custom Splattershot Jr. and Tentatek Splattershot rise to the top as players try the new weapons"
+                break;
+            case 5:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "Previous patch"
+                    },
+                    data: {Weapon: "Aerospray RG", countp: 0.0331},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Big Swig Roller", countp: 0.0124},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Custom Splattershot Jr.", countp: 0.0650},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Dapple Dualies Nouveau", countp: 0.0218},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Forge Splattershot Pro", countp: 0.0468},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Inkbrush Nouveau", countp: 0.0068},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Luna Blaster Neo", countp: 0.0092},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Slosher Deco", countp: 0.0047},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Snipewriter 5H", countp: 0.0158},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Splattershot Nova", countp: 0.0205},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous patch"
+                        },
+                        data: {Weapon: "Tentatek Splattershot", countp: 0.0595},
+                        dx: 140,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "2.0.1 doesn't change any gameplay but we see that after the hype of the new weapons dies down, the Splash-o-Matic is at the top after a major tournament win.  We also see the Tentatek Splattershot outrank the regular Splattershot"
+                break;
+            case 6:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "Crab Tank Nerfed",
+                        bgPadding: 10,
+                        title: "Nerfed"
+                    },
+                    data: {Weapon: "L-3 Nozzlenose", countp: 0.0029},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "red"
+                },
+                    {
+                        note: {
+                            label: "Crab Tank Nerfed",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Splash-o-matic", countp: 0.0680},
+                        dx: 20,
+                        connector: {end: "dot"},
+                        color: "red"
+                    }, {
+                        note: {
+                            label: "Crab Tank Nerfed",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Splat Dualies", countp: 0.0091},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Crab Tank Nerfed",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Splattershot Pro", countp: 0.0032},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Triple Inkstrike Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Tentatek Splattershot", countp: 0.0810},
+                        dx: 20,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Triple Inkstrike Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Splat Brella", countp: 0.0021},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Triple Inkstrike Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Slosher", countp: 0.0070},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Triple Inkstrike Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Rapid Blaster", countp: 0.0066},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "2.1.1 sees heavy balance changes, triple inkstrike (on the Tentatek Splattershot) now counters crab (on the Splash-o-Matic) and we see Tentatek beating out the Splash-o-matic in popularity"
+                break;
+            case 7:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "New Weapon"
+                    },
+                    data: {Weapon: ".96 Gal Deco", countp: 0.0639},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Clash Blaster Neo", countp: 0.0118},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Custom Jet Squelcher", countp: 0.0257},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Krak-On Splat Roller", countp: 0.0380},
+                        dx: 130,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "L-3 Nozzlenose D", countp: 0.0096},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "N-ZAP '89", countp: 0.0557},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Neo Splash-o-matic", countp: 0.0423},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Neo Sploosh-o-matic", countp: 0.0131},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Rapid Blaster Deco", countp: 0.0201},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Tri-Slosher Nouveau", countp: 0.0211},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Z+F Splat Charger", countp: 0.0139},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Z+F Splatterscope", countp: 0.0102},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                ]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "3.0.0 releases many new weapons and nerfs for the Splash-o-matic"
+                break;
+            case 8:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "Previous Patch"
+                    },
+                    data: {Weapon: ".96 Gal Deco", countp: 0.0639},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Clash Blaster Neo", countp: 0.0118},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Custom Jet Squelcher", countp: 0.0257},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Krak-On Splat Roller", countp: 0.0380},
+                        dx: 130,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "L-3 Nozzlenose D", countp: 0.0096},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "N-ZAP '89", countp: 0.0557},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Neo Splash-o-matic", countp: 0.0423},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Neo Sploosh-o-matic", countp: 0.0131},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Rapid Blaster Deco", countp: 0.0201},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Tri-Slosher Nouveau", countp: 0.0211},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Z+F Splat Charger", countp: 0.0139},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                    {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Z+F Splatterscope", countp: 0.0102},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "3.0.1 had bug fixes. We see the weapons stabilize with Tentatek and Neo Splash at the top (both triple inkstrike weapons) and the splash-o-matic following in third"
+                break;
+            case 9:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "Dualie Buffs/Crab Nerfs",
+                        bgPadding: 10,
+                        title: "Adjusted"
+                    },
+                    data: {Weapon: "Splat Dualies", countp: 0.0117},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "Dualie Buffs",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Dapple Dualies", countp: 0.0081},
+                        dx: 130,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Dualie Buffs",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Dapple Dualies Nouveau", countp: 0.0214},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    }, {
+                        note: {
+                            label: "Crab Tank Nerfed",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "L-3 Nozzlenose", countp: 0.0029},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Crab Tank Nerfed",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Splash-o-matic", countp: 0.0258},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Crab Tank Nerfed",
+                            bgPadding: 10,
+                            title: "Nerfed"
+                        },
+                        data: {Weapon: "Splattershot Pro", countp: 0.0028},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    }, {
+                        note: {
+                            label: "Ink Jet Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Rapid Blaster Deco", countp: 0.0125},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Ink Jet Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Ballpoint Splatling", countp: 0.0146},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Ink Jet Buffed",
+                            bgPadding: 10,
+                            title: "Buffed"
+                        },
+                        data: {Weapon: "Tri-Slosher", countp: 0.0087},
+                        dx: 180,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "3.1.0 contains many balance changes most notable are crab nerfs, most heavily affecting the splash-o-matic"
+                break;
+            case 10:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "Adjusted Previous Patch",
+                        bgPadding: 10,
+                        title: "Previous Patch Value"
+                    },
+                    data: {Weapon: "Splat Dualies", countp: 0.0117},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "Buffed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Dapple Dualies", countp: 0.0081},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Buffed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Dapple Dualies Nouveau", countp: 0.0214},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    }, {
+                        note: {
+                            label: "Nerfed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "L-3 Nozzlenose", countp: 0.0029},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Nerfed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Splash-o-matic", countp: 0.0258},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    },
+                    {
+                        note: {
+                            label: "Nerfed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Splattershot Pro", countp: 0.0028},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "red"
+                    }, {
+                        note: {
+                            label: "Buffed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Rapid Blaster Deco", countp: 0.0125},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Buffed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Ballpoint Splatling", countp: 0.0146},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },
+                    {
+                        note: {
+                            label: "Buffed Previous Patch",
+                            bgPadding: 10,
+                            title: "Previous Patch Value"
+                        },
+                        data: {Weapon: "Tri-Slosher", countp: 0.0087},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "green"
+                    },]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "3.1.1 contains bug fixes, players realize the inkjet buff in the previous patch makes the Ballpoint Splatling very good"
+                break;
+            case 11:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "New Weapon"
+                    },
+                    data: {Weapon: "Light Tetra Dualies", countp: 0.0203},
+                    dx: 180,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Painbrush", countp: 0.0692},
+                        dx: 140,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Tenta Sorella Brella", countp: 0.0198},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Splatana Wiper Deco", countp: 0.0374},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Custom Dualie Squelchers", countp: 0.0182},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "S-BLAST '92", countp: 0.0519},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Heavy Splatling Deco", countp: 0.0270},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Rapid Blaster Pro Deco", countp: 0.0104},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Annaki Splattershot Nova", countp: 0.0336},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "Big Swig Roller Express", countp: 0.0169},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "New Weapon"
+                        },
+                        data: {Weapon: "H-3 Nozzlenose D", countp: 0.0095},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                ]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "4.0.0 releases many new weapons including the Painbrush and the S-BLAST '92 as well as others. Sloshing Machine gets nerfed"
+                break;
+            case 12:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "Previous Patch"
+                    },
+                    data: {Weapon: "Light Tetra Dualies", countp: 0.0203},
+                    dx: 180,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Painbrush", countp: 0.0692},
+                        dx: 140,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Tenta Sorella Brella", countp: 0.0198},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Splatana Wiper Deco", countp: 0.0374},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Custom Dualie Squelchers", countp: 0.0182},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "S-BLAST '92", countp: 0.0519},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Heavy Splatling Deco", countp: 0.0270},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Rapid Blaster Pro Deco", countp: 0.0104},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Annaki Splattershot Nova", countp: 0.0336},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Big Swig Roller Express", countp: 0.0169},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "H-3 Nozzlenose D", countp: 0.0095},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                ]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "4.0.1 contains bug fixes and is more representative of actual player behaviour during this season"
+                break;
+            case 13:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "New Weapon Kit",
+                        bgPadding: 10,
+                        title: "Previous Patch"
+                    },
+                    data: {Weapon: "Light Tetra Dualies", countp: 0.0203},
+                    dx: 180,
+                    connector: {end: "dot"},
+                    color: "orange"
+                },
+                    {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Painbrush", countp: 0.0692},
+                        dx: 140,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Tenta Sorella Brella", countp: 0.0198},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Splatana Wiper Deco", countp: 0.0374},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Custom Dualie Squelchers", countp: 0.0182},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Main Weapon",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "S-BLAST '92", countp: 0.0519},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Heavy Splatling Deco", countp: 0.0270},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Rapid Blaster Pro Deco", countp: 0.0104},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Annaki Splattershot Nova", countp: 0.0336},
+                        dx: 120,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "Big Swig Roller Express", countp: 0.0169},
+                        dx: 170,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    }, {
+                        note: {
+                            label: "New Weapon Kit",
+                            bgPadding: 10,
+                            title: "Previous Patch"
+                        },
+                        data: {Weapon: "H-3 Nozzlenose D", countp: 0.0095},
+                        dx: 150,
+                        connector: {end: "dot"},
+                        color: "orange"
+                    },
+                ]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "4.0.2 contains bug fixes. It is interesting to see differences in player behavior between the 4.0.x patches as there is very little difference between the patches"
+                break;
+            case 14:
+                clearAnnotations()
+                annotations = [{
+                    note: {
+                        label: "Trizooka Buffed/SplattershotBuffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Splattershot", countp: 0.0687},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "SplattershotBuffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Tentatek Splattershot", countp: 0.0461},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "N-ZAP Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "N-ZAP '85", countp: 0.0451},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "N-ZAP Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "N-ZAP '89", countp: 0.0227},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Trizooka Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Squeezer", countp: 0.0103},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Trizooka Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Carbon Roller Deco", countp: 0.0109},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Trizooka Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Clash Blaster", countp: 0.0069},
+                    dx: 150,
+                    dy: 40,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Trizooka Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Tenta Sorella Brella", countp: 0.0074},
+                    dx: 150,
+                    dy: -15,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Inkjet Nerfed",
+                        bgPadding: 10,
+                        title: "Nerfed"
+                    },
+                    data: {Weapon: "Annaki Splattershot Nova", countp: 0.0075},
+                    dx: 150,
+                    dy: -40,
+                    connector: {end: "dot"},
+                    color: "red"
+                }, {
+                    note: {
+                        label: "Inkjet Nerfed",
+                        bgPadding: 10,
+                        title: "Nerfed"
+                    },
+                    data: {Weapon: "Rapid Blaster Deco", countp: 0.006},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "red"
+                }, {
+                    note: {
+                        label: "Inkjet Nerfed",
+                        bgPadding: 10,
+                        title: "Nerfed"
+                    },
+                    data: {Weapon: "Ballpoint Splatling", countp: 0.0133},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "red"
+                }, {
+                    note: {
+                        label: "Inkjet Nerfed",
+                        bgPadding: 10,
+                        title: "Nerfed"
+                    },
+                    data: {Weapon: "Tri-Slosher", countp: 0.0073},
+                    dx: 150,
+                    dy: 15,
+                    connector: {end: "dot"},
+                    color: "red"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: ".96 Gal", countp: 0.0043},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Jet Squelcher", countp: 0.0121},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Rapid Blaster Pro", countp: 0.0017},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Splat Charger", countp: 0.0063},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Splatterscope", countp: 0.0036},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Tenta Brella", countp: 0.0024},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                }, {
+                    note: {
+                        label: "Ink Vac Buffed",
+                        bgPadding: 10,
+                        title: "Buffed"
+                    },
+                    data: {Weapon: "Big Swig Roller", countp: 0.0029},
+                    dx: 150,
+                    connector: {end: "dot"},
+                    color: "green"
+                },
+                ]
+                makeAnnotations = d3.annotation()
+                    .editMode(true)
+                    .notePadding(15)
+                    .type(type)
+                    .accessors({
+                        x: d => x(d.countp),
+                        y: d => y(d.Weapon) + y.bandwidth() / 2
+                    })
+                    .annotations(annotations)
+                annotationGroup = svg.append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations)
+                document.getElementById("description").innerHTML = "4.1.0 is the current version of the game. Trizooka (on Splattershot) and Splattershot gets substantial buffs"
+                break;
+        }
 
-
-            svg.selectAll("g.x")
-                .attr("transform", `translate(0,${marginTop})`)
-                .call(d3.axisTop(x).ticks(width / 80, "%"))
-                .call(g => g.select(".domain").remove());
-
-            svg.selectAll("g.y")
-                .transition()
-                .duration(2000)
-                .attr("transform", `translate(${marginLeft},0)`)
-                .call(d3.axisLeft(y).tickSizeOuter(0));
-
-            console.log(svg.selectAll("y.y"))
-          // Define tooltip
-            var tooltip = d3.select("#tooltip");
-            d3.selectAll("rect")
-                .on("mouseover",function (d,i){
-                    tooltip.style("opacity", 1)
-                        .style("left",(d3.event.pageX) + "px")
-                        .style("top",(d3.event.pageY) + "px")
-                        .html(d.Weapon +" was played \n" + d3.format(".2f")(d.count * 100) +" percent of the time")
-                })
-                .on("mouseout",function (){tooltip.style("opacity",0)});
-            console.log(svg)
-            if(Next){
-                curentVersion++;
-                if (curentVersion == versionNumbers.length - 1){
-                    document.getElementById("nextV").style.display="none";
-                }
-                if (curentVersion == 1){
-                    document.getElementById("prevV").style.display="block";
-                }
-            }
-            else{
-                curentVersion--;
-                if (curentVersion == 0){
-                    document.getElementById("prevV").style.display="none";
-                }
-                if (curentVersion == versionNumbers.length-2){
-                    document.getElementById("nextV").style.display="block";
-                }
-            }
-            document.getElementById("Version").innerHTML = "Version " + versionNumbers[curentVersion] +" " + versionRelease[versionNumbers[curentVersion]]
-            switch (curentVersion){
-                case 0:
-                    break;
-                case 1:
-                    break;
-                case 2:
-                    break;
-                case 3:
-                    break;
-                case 4:
-                    break;
-                case 5:
-                    break;
-                case 6:
-                    break;
-                case 7:
-                    break;
-                case 8:
-                    break;
-                case 9:
-                    break;
-                case 10:
-                    break;
-                case 11:
-                    break;
-                case 12:
-                    break;
-                case 13:
-                    break;
-                case 14:
-                    break;
-            }
-            }
+    }
 </script>
-    <p>data from <a href="https://stat.ink/">stat.ink</a></p>
+<p>data from <a href="https://stat.ink/">stat.ink</a></p>
 </body>
 </html>
